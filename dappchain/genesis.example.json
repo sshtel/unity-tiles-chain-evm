@@ -3,8 +3,8 @@
         {
             "vm": "EVM",
             "format": "hex",
-            "name": "TilesChain",
-            "location": "TilesChain.bin"
+            "name": "Legendary",
+            "location": "./contracts/legendary.bin/__legendary_sol_LegendQuest.bin"
         }
     ]
 }
