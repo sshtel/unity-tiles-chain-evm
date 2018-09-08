@@ -13,13 +13,6 @@ contract LegendQuest is Ownable {
 
   uint cooldownTime = 30 seconds;
 
-  struct Party {
-
-  }
-  struct Monster {
-
-  }
-
   struct Quest {
     uint key;
     string title;
@@ -54,36 +47,45 @@ contract LegendQuest is Ownable {
     uint endTime = now + periodTime;
     uint id = quests.push(Quest(randKey, title, periodTime, endTime, monsterName, monsterPower)) - 1;
     questToOwner[randKey] = msg.sender;
-    NewQuest(id, title);
+    emit NewQuest(id, title);
   }
 
-  function openRandomQuest(uint _uid) public returns (uint uid, uint qid) {
-    uint rand = uint(keccak256(now, uid));
+  function openRandomQuest(uint _uid) public returns (uint, uint) {
+    uint rand = uint(keccak256(now, _uid));
     uint questRandModulus = quests.length;
     uint randQid = rand % questRandModulus;
     ownerQuestCount[msg.sender] = ownerQuestCount[msg.sender].add(1);
     return (_uid, randQid);
   }
 
-  function createUser(string username) public returns (uint uid) {
-    if (ownerUid[msg.sender] > 0) throw;
-    uint id = users.push(User(username)) - 1;
+  function createUser(string username) public returns (uint) {
+    users.push(User(username));
+    uint id = users.length - 1;
     ownerUid[msg.sender] = id;
     return id;
   }
 
-  function getUserInfo(address owner) public returns (string username) {
+  function getUserInfo(address owner) public view returns (string) {
     uint uid = ownerUid[owner];
-    User user = users[uid];
+    User storage user = users[uid];
     return user.username;
   }
 
-  function getUserCount() public constant returns(uint count) {
+  function getUserCount() public constant returns(uint) {
       return users.length;
   }
 
-  function getQuestCount() public constant returns(uint count) {
+  function getQuestCount() public constant returns(uint) {
       return quests.length;
   }
+
+  function whoAmI() public view returns (address) {
+    return msg.sender;
+  }
+
+  function ping() public pure returns (uint) {
+    return 1;
+  }
+
 
 }
