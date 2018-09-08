@@ -100,7 +100,7 @@ contract LegendQuest is Ownable {
 
     if (quest.inUse == 1) {
       if (quest.endTime >= now) {
-        emit ResultQuest(true, questSlotId, quest.qid, now - quest.endTime);
+        emit ResultQuest(true, questSlotId, quest.qid, quest.endTime - now);
       } else {
         quest.inUse = 0;
         emit ResultQuest(true, questSlotId, quest.qid, 0);
