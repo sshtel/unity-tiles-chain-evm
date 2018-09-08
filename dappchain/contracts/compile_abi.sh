@@ -1,1 +1,1 @@
-solcjs ./*.sol --abi
+solcjs ./*.sol --abi -o legendary.abi

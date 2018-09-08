@@ -15,7 +15,7 @@ const solSafemath = fs.readFileSync(pathSafemath, 'utf8');
 const input = {
   sources: {
     // 'TilesChain.sol': solTilesChain,
-    'quest.sol': solQuest,
+    'legendary.sol': solQuest,
     'ownable.sol': solOwnable,
     'safemath.sol': solSafemath
   }
@@ -24,8 +24,8 @@ const input = {
 const compiledContract = solc.compile(input, 1);
 // console.log(compiledContract);
 
-let abi = compiledContract.contracts['quest.sol:LegendQuest'].interface;
-let bytecode = '0x'+compiledContract.contracts['quest.sol:LegendQuest'].bytecode;
+let abi = compiledContract.contracts['legendary.sol:LegendQuest'].interface;
+let bytecode = '0x'+compiledContract.contracts['legendary.sol:LegendQuest'].bytecode;
 
 fs.writeFileSync('legendary.abi', abi);
 fs.writeFileSync('legendary.bin', bytecode);
