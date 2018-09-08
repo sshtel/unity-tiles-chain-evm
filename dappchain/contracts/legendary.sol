@@ -12,8 +12,7 @@ contract LegendQuest is Ownable {
   event NewQuest(uint uid, string title);
 
   uint cooldownTime = 30 seconds;
-  uint questRandModulus = 10;
-  
+
   struct Party {
 
   }
@@ -22,9 +21,10 @@ contract LegendQuest is Ownable {
   }
 
   struct Quest {
+    uint key;
     string title;
     uint periodTime;
-
+    uint endTime;
     // Party MyParty;
     // Monster MyMonster;
 
@@ -45,25 +45,28 @@ contract LegendQuest is Ownable {
   Quest[] public quests;
   User[] public users;
 
-  mapping (address => uint) public ownerUid;
-  mapping (uint => address) public questToOwner;
-  mapping (address => uint) ownerQuestCount;
+  mapping (address => uint) public ownerUid;      // msg.sender : uid(idx)
+  mapping (uint => address) public questToOwner;  // rand Key : msg.sender
+  mapping (address => uint) ownerQuestCount;      // msg.sender : number of quests
 
   function createQuest(string title, uint periodTime, string monsterName, uint monsterPower) public onlyOwner {
-    uint id = quests.push(Quest(title, periodTime, monsterName, monsterPower)) - 1;
-    questToOwner[id] = msg.sender;
-    ownerQuestCount[msg.sender] = 0;
+    uint randKey = uint(keccak256(now, title));
+    uint endTime = now + periodTime;
+    uint id = quests.push(Quest(randKey, title, periodTime, endTime, monsterName, monsterPower)) - 1;
+    questToOwner[randKey] = msg.sender;
     NewQuest(id, title);
   }
 
   function openRandomQuest(uint _uid) public returns (uint uid, uint qid) {
     uint rand = uint(keccak256(now, uid));
+    uint questRandModulus = quests.length;
     uint randQid = rand % questRandModulus;
-
+    ownerQuestCount[msg.sender] = ownerQuestCount[msg.sender].add(1);
     return (_uid, randQid);
   }
 
   function createUser(string username) public returns (uint uid) {
+    if (ownerUid[msg.sender] > 0) throw;
     uint id = users.push(User(username)) - 1;
     ownerUid[msg.sender] = id;
     return id;
