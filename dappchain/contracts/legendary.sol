@@ -11,8 +11,9 @@ contract LegendQuest is Ownable {
 
   event NewQuest(bool success, uint qid);
   event NewUser(uint uid, string title);
-  event StartQuest(uint questSlotId);
-  event ResultQuest(uint questSlotId, uint qid, uint remainTime);
+  event StartQuest(uint questSlotId, uint endTime);
+  event ResultQuest(bool success, uint questSlotId, uint qid, uint remainTime);
+  event DeleteQuest(bool success, uint questSlotId);
 
   uint cooldownTime = 30 seconds;
 
@@ -60,24 +61,29 @@ contract LegendQuest is Ownable {
       quest4[msg.sender].periodTime = periodTime;
     } else {
       emit NewQuest(false, qid); //fail
+      return;
     }
     emit NewQuest(true, qid);
   }
 
   function startQuest(uint questSlotId) public {
+    uint endTime;
     if (questSlotId == 1) {
-      quest1[msg.sender].endTime = now + quest1[msg.sender].periodTime;
-      StartQuest(questSlotId);
+      endTime = now + quest1[msg.sender].periodTime;
+      quest1[msg.sender].endTime = endTime;
     } else if (questSlotId == 2) {
-      quest2[msg.sender].endTime = now + quest2[msg.sender].periodTime;
-      StartQuest(questSlotId);
+      endTime = now + quest2[msg.sender].periodTime;
+      quest2[msg.sender].endTime = endTime;
     } else if (questSlotId == 3) {
-      quest3[msg.sender].endTime = now + quest3[msg.sender].periodTime;
-      StartQuest(questSlotId);
+      endTime = now + quest3[msg.sender].periodTime;
+      quest3[msg.sender].endTime = endTime;
     } else if (questSlotId == 4) {
-      quest4[msg.sender].endTime = now + quest4[msg.sender].periodTime;
-      StartQuest(questSlotId);
+      endTime = now + quest4[msg.sender].periodTime;
+      quest4[msg.sender].endTime = endTime;
+    } else {
+      return;
     }
+    emit StartQuest(questSlotId, endTime);
   }
 
   function resultQuest(uint questSlotId) public {
@@ -94,12 +100,38 @@ contract LegendQuest is Ownable {
 
     if (quest.inUse == 1) {
       if (quest.endTime >= now) {
-        quest.inUse = 0;
-        emit ResultQuest(questSlotId, quest.qid, 0);
+        emit ResultQuest(true, questSlotId, quest.qid, now - quest.endTime);
       } else {
-        emit ResultQuest(questSlotId, quest.qid, now - quest.endTime);
+        quest.inUse = 0;
+        emit ResultQuest(true, questSlotId, quest.qid, 0);
       }
+    } else {
+      emit ResultQuest(false, questSlotId, 0, 0);
     }
+  }
+
+  function deleteQuest(uint questSlotId) public {
+    if (questSlotId == 1) {
+      quest1[msg.sender].inUse = 0;
+      quest1[msg.sender].qid = 0;
+      quest1[msg.sender].periodTime = 0;
+    } else if (questSlotId == 2) {
+      quest2[msg.sender].inUse = 0;
+      quest2[msg.sender].qid = 0;
+      quest2[msg.sender].periodTime = 0;
+    } else if (questSlotId == 3) {
+      quest3[msg.sender].inUse = 0;
+      quest3[msg.sender].qid = 0;
+      quest3[msg.sender].periodTime = 0;
+    } else if (questSlotId == 4) {
+      quest4[msg.sender].inUse = 0;
+      quest4[msg.sender].qid = 0;
+      quest4[msg.sender].periodTime = 0;
+    } else {
+      emit DeleteQuest(false, questSlotId);
+      return;
+    }
+    emit DeleteQuest(true, questSlotId);
   }
 
   function createUser(string username) public {
@@ -129,8 +161,12 @@ contract LegendQuest is Ownable {
   }
 
   function rand(uint modulus) public returns (uint) {
-    uint rand = uint(keccak256(now, msg.sender));
-    return rand % modulus;
+    uint ret = uint(keccak256(now, msg.sender));
+    return ret % modulus;
+  }
+
+  function nowTime() public returns (uint) {
+    return now;
   }
 
 }
