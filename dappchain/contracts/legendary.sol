@@ -12,6 +12,7 @@ contract LegendQuest is Ownable {
   event NewQuest(bool success, uint qid);
   event NewUser(uint uid, string title);
   event StartQuest(uint questSlotId);
+  event ResultQuest(uint questSlotId, uint qid, uint remainTime);
 
   uint cooldownTime = 30 seconds;
 
@@ -63,7 +64,7 @@ contract LegendQuest is Ownable {
     emit NewQuest(true, qid);
   }
 
-  function startQuest(uint questSlotId) public returns (uint, uint) {
+  function startQuest(uint questSlotId) public {
     if (questSlotId == 1) {
       quest1[msg.sender].endTime = now + quest1[msg.sender].periodTime;
       StartQuest(questSlotId);
@@ -79,6 +80,28 @@ contract LegendQuest is Ownable {
     }
   }
 
+  function resultQuest(uint questSlotId) public {
+    Quest storage quest;
+    if (questSlotId == 1) {
+      quest = quest1[msg.sender];
+    } else if (questSlotId == 2) {
+      quest = quest2[msg.sender];
+    } else if (questSlotId == 3) {
+      quest = quest3[msg.sender];
+    } else if (questSlotId == 4) {
+      quest = quest4[msg.sender];
+    }
+
+    if (quest.inUse == 1) {
+      if (quest.endTime >= now) {
+        quest.inUse = 0;
+        emit ResultQuest(questSlotId, quest.qid, 0);
+      } else {
+        emit ResultQuest(questSlotId, quest.qid, now - quest.endTime);
+      }
+    }
+  }
+
   function createUser(string username) public {
     users.push(User(username));
     ownerUid[msg.sender] = userCount;
@@ -87,10 +110,10 @@ contract LegendQuest is Ownable {
     emit NewUser(idx, username);
   }
 
-  function getUserInfo() public view returns (string) {
+  function getUserInfo() public view returns (uint, string) {
     uint uid = ownerUid[msg.sender];
     User storage user = users[uid];
-    return user.username;
+    return (uid, user.username);
   }
 
   function getUserCount() public constant returns(uint) {
