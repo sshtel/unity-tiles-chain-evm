@@ -1,0 +1,1 @@
+cd contracts && ./compile_bin.sh && ./compile_abi.sh
