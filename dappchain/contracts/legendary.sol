@@ -14,7 +14,6 @@ contract LegendQuest is Ownable {
   event StartQuest(uint questSlotId, uint endTime);
   event ResultQuest(string status, uint questSlotId, uint qid, uint remainTime);
   event DeleteQuest(bool success, uint questSlotId);
-
   event ReportQuest(uint idx, bool inReady, bool inRunning, uint qid, uint periodTime, uint endTime);
 
   uint cooldownTime = 30 seconds;
@@ -89,6 +88,7 @@ contract LegendQuest is Ownable {
       }
       if (q.inRunning) { continue; }
       q.inReady = true;
+      q.qid = qid;
       q.periodTime = periodTime;
       emit NewQuest(true, qid, i, "Quest created");
       return;
@@ -110,17 +110,6 @@ contract LegendQuest is Ownable {
     else if (idx == 10) return quest10[owner];
     else if (idx == 11) return quest11[owner];
     else return dummy;
-  }
-
-  function showQuestList() public {
-    for (uint i = 0; i < maxQuestCount; i++){
-      Quest storage q = getQuest(msg.sender, i);
-      // string inReady = "inReady:false";
-      // if (q.inReady) inReady = "inReady:true";
-      // string inRunning = "inRun:false";
-      // if (q.inRunning) inRunning = "inRun: true";
-      emit ReportQuest(i, q.inReady, q.inRunning, q.qid, q.periodTime, q.endTime);
-    }
   }
 
   function getReadyQuestCount() public view returns (uint) {
@@ -213,4 +202,17 @@ contract LegendQuest is Ownable {
     return now;
   }
 
+  function showQuestList() public returns(uint) {
+    for (uint i = 0; i < maxQuestCount; i++){
+      Quest storage q = getQuest(msg.sender, i);
+      emit ReportQuest(i, q.inReady, q.inRunning, q.qid, q.periodTime, q.endTime);
+    }
+    return 1;
+  }
+
+  function showQuest(uint idx) public returns(uint) {
+    Quest storage q = getQuest(msg.sender, idx);
+    emit ReportQuest(idx, q.inReady, q.inRunning, q.qid, q.periodTime, q.endTime);
+    return 1;
+  }
 }
