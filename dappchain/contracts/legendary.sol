@@ -9,16 +9,19 @@ contract LegendQuest is Ownable {
   using SafeMath32 for uint32;
   using SafeMath16 for uint16;
 
-  event NewQuest(bool success, uint qid);
+  event NewQuest(bool success, uint qid, uint questSlotId, string reason);
   event NewUser(uint uid, string title);
   event StartQuest(uint questSlotId, uint endTime);
-  event ResultQuest(bool success, uint questSlotId, uint qid, uint remainTime);
+  event ResultQuest(string status, uint questSlotId, uint qid, uint remainTime);
   event DeleteQuest(bool success, uint questSlotId);
+
+  event ReportQuest(uint idx, bool inReady, bool inRunning, uint qid, uint periodTime, uint endTime);
 
   uint cooldownTime = 30 seconds;
 
   struct Quest {
-    uint inUse;
+    bool inReady;
+    bool inRunning;
     uint qid;
     uint periodTime;
     uint endTime;
@@ -36,101 +39,142 @@ contract LegendQuest is Ownable {
   mapping (address => uint) public ownerUid;      // msg.sender : uid(idx)
   mapping (address => uint) public ownerQuestCount;      // msg.sender : number of quests
 
+
+  mapping (address => Quest) public quest0;
   mapping (address => Quest) public quest1;
   mapping (address => Quest) public quest2;
   mapping (address => Quest) public quest3;
   mapping (address => Quest) public quest4;
-  
+  mapping (address => Quest) public quest5;
+  mapping (address => Quest) public quest6;
+  mapping (address => Quest) public quest7;
+  mapping (address => Quest) public quest8;
+  mapping (address => Quest) public quest9;
+  mapping (address => Quest) public quest10;
+  mapping (address => Quest) public quest11;
+  Quest public dummy;
+
+  mapping (address => uint) public readyQuestCount;
+  mapping (address => uint) public runningQuestCount;
+
+  uint private maxQuestCount = 12;
+  uint private maxReadyQuestCount = 4;
+
+
+  // function questSlotCount() private returns(uint) {
+  //   uint count = 0;
+  //   if (quest1[msg.sender].inUse == 1) { count++; }
+  //   if (quest2[msg.sender].inUse == 1) { count++; }
+  //   if (quest3[msg.sender].inUse == 1) { count++; }
+  //   if (quest4[msg.sender].inUse == 1) { count++; }
+  //   if (quest5[msg.sender].inUse == 1) { count++; }
+  //   if (quest6[msg.sender].inUse == 1) { count++; }
+  //   if (quest7[msg.sender].inUse == 1) { count++; }
+  //   if (quest8[msg.sender].inUse == 1) { count++; }
+  //   return count;
+  // }
 
   function createQuest(uint qid, uint periodTime) public {
-    if (quest1[msg.sender].inUse == 0) {
-      quest1[msg.sender].inUse = 1;
-      quest1[msg.sender].qid = qid;
-      quest1[msg.sender].periodTime = periodTime;
-    } else if (quest2[msg.sender].inUse == 0) {
-      quest2[msg.sender].inUse = 1;
-      quest2[msg.sender].qid = qid;
-      quest2[msg.sender].periodTime = periodTime;
-    } else if (quest3[msg.sender].inUse == 0) {
-      quest3[msg.sender].inUse = 1;
-      quest3[msg.sender].qid = qid;
-      quest3[msg.sender].periodTime = periodTime;
-    } else if (quest4[msg.sender].inUse == 0) {
-      quest4[msg.sender].inUse = 1;
-      quest4[msg.sender].qid = qid;
-      quest4[msg.sender].periodTime = periodTime;
-    } else {
-      emit NewQuest(false, qid); //fail
+    uint inReadyCount = 0;
+    for (uint i = 0; i < maxQuestCount; i++) {
+      if(inReadyCount >= maxReadyQuestCount) {
+        emit NewQuest(false, qid, 99, "Quest Queue full"); //fail
+        return;
+      }
+
+      Quest storage q = getQuest(msg.sender, i);
+      if (q.inReady) {
+        inReadyCount++;
+        continue;
+      }
+      if (q.inRunning) { continue; }
+      q.inReady = true;
+      q.periodTime = periodTime;
+      emit NewQuest(true, qid, i, "Quest created");
       return;
     }
-    emit NewQuest(true, qid);
+    emit NewQuest(false, qid, 99, "Quest Queue full"); //fail
+    return;
+  }
+  function getQuest(address owner, uint idx) private view returns (Quest storage) {
+    if (idx == 0) return quest0[owner];
+    else if (idx == 1) return quest1[owner];
+    else if (idx == 2) return quest2[owner];
+    else if (idx == 3) return quest3[owner];
+    else if (idx == 4) return quest4[owner];
+    else if (idx == 5) return quest5[owner];
+    else if (idx == 6) return quest6[owner];
+    else if (idx == 7) return quest7[owner];
+    else if (idx == 8) return quest8[owner];
+    else if (idx == 9) return quest9[owner];
+    else if (idx == 10) return quest10[owner];
+    else if (idx == 11) return quest11[owner];
+    else return dummy;
+  }
+
+  function showQuestList() public {
+    for (uint i = 0; i < maxQuestCount; i++){
+      Quest storage q = getQuest(msg.sender, i);
+      // string inReady = "inReady:false";
+      // if (q.inReady) inReady = "inReady:true";
+      // string inRunning = "inRun:false";
+      // if (q.inRunning) inRunning = "inRun: true";
+      emit ReportQuest(i, q.inReady, q.inRunning, q.qid, q.periodTime, q.endTime);
+    }
+  }
+
+  function getReadyQuestCount() public view returns (uint) {
+    return readyQuestCount[msg.sender];
+  }
+
+  function getRunningQuestCount() public view returns (uint) {
+    return runningQuestCount[msg.sender];
   }
 
   function startQuest(uint questSlotId) public {
     uint endTime;
-    if (questSlotId == 1) {
-      endTime = now + quest1[msg.sender].periodTime;
-      quest1[msg.sender].endTime = endTime;
-    } else if (questSlotId == 2) {
-      endTime = now + quest2[msg.sender].periodTime;
-      quest2[msg.sender].endTime = endTime;
-    } else if (questSlotId == 3) {
-      endTime = now + quest3[msg.sender].periodTime;
-      quest3[msg.sender].endTime = endTime;
-    } else if (questSlotId == 4) {
-      endTime = now + quest4[msg.sender].periodTime;
-      quest4[msg.sender].endTime = endTime;
+    Quest storage quest = getQuest(msg.sender, questSlotId);
+    if(quest.inReady) {
+      quest.inReady = false;
+      quest.inRunning = true;
+      endTime = now + quest.periodTime;
+      quest.endTime = endTime;
     } else {
+      emit StartQuest(99, 0);
       return;
     }
+
+    readyQuestCount[msg.sender]--;
+    runningQuestCount[msg.sender]++;
     emit StartQuest(questSlotId, endTime);
   }
 
   function resultQuest(uint questSlotId) public {
-    Quest storage quest;
-    if (questSlotId == 1) {
-      quest = quest1[msg.sender];
-    } else if (questSlotId == 2) {
-      quest = quest2[msg.sender];
-    } else if (questSlotId == 3) {
-      quest = quest3[msg.sender];
-    } else if (questSlotId == 4) {
-      quest = quest4[msg.sender];
-    }
+    Quest storage quest = getQuest(msg.sender, questSlotId);
 
-    if (quest.inUse == 1) {
+    if (quest.inRunning) {
       if (quest.endTime >= now) {
-        emit ResultQuest(true, questSlotId, quest.qid, quest.endTime - now);
+        emit ResultQuest("running", questSlotId, quest.qid, quest.endTime - now);
       } else {
-        quest.inUse = 0;
-        emit ResultQuest(true, questSlotId, quest.qid, 0);
+        quest.inRunning = false;
+        quest.inReady = false;
+        runningQuestCount[msg.sender]--;
+        emit ResultQuest("done", questSlotId, quest.qid, 0);
       }
+    } else if (quest.inReady) {
+      emit ResultQuest("ready", questSlotId, quest.qid, 0);
     } else {
-      emit ResultQuest(false, questSlotId, 0, 0);
+      emit ResultQuest("empty", questSlotId, 0, 0);
     }
   }
 
   function deleteQuest(uint questSlotId) public {
-    if (questSlotId == 1) {
-      quest1[msg.sender].inUse = 0;
-      quest1[msg.sender].qid = 0;
-      quest1[msg.sender].periodTime = 0;
-    } else if (questSlotId == 2) {
-      quest2[msg.sender].inUse = 0;
-      quest2[msg.sender].qid = 0;
-      quest2[msg.sender].periodTime = 0;
-    } else if (questSlotId == 3) {
-      quest3[msg.sender].inUse = 0;
-      quest3[msg.sender].qid = 0;
-      quest3[msg.sender].periodTime = 0;
-    } else if (questSlotId == 4) {
-      quest4[msg.sender].inUse = 0;
-      quest4[msg.sender].qid = 0;
-      quest4[msg.sender].periodTime = 0;
-    } else {
-      emit DeleteQuest(false, questSlotId);
-      return;
-    }
+    Quest storage quest = getQuest(msg.sender, questSlotId);
+    quest.inReady = false;
+    quest.inRunning = false;
+    quest.qid = 0;
+    quest.periodTime = 0;
+    quest.endTime = 0;
     emit DeleteQuest(true, questSlotId);
   }
 
@@ -160,12 +204,12 @@ contract LegendQuest is Ownable {
     return 1;
   }
 
-  function rand(uint modulus) public returns (uint) {
+  function rand(uint modulus) public view returns (uint) {
     uint ret = uint(keccak256(now, msg.sender));
     return ret % modulus;
   }
 
-  function nowTime() public returns (uint) {
+  function nowTime() public view returns (uint) {
     return now;
   }
 
